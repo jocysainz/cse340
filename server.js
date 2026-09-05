@@ -1,12 +1,29 @@
 import express from 'express';
+import { fileURLToPath } from 'url';
+import path from 'path';
 
+//define the application environment
 const NODE_ENV = process.env.NODE_ENV?.toLowerCase() || 'production';
+//define the port number the server will listen on
 const PORT = process.env.PORT || 3000;
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 
+app.use(express.static(path.join(__dirname, 'public')));
+
 app.get('/', (req, res) => {
-  res.send('Hello from Express!');
+    res.sendFile(path.join(__dirname, 'src', 'views', 'home.html'));
+});
+
+app.get('/organizations', (req, res) => {
+    res.sendFile(path.join(__dirname, 'src', 'views', 'organizations.html'));
+});
+
+app.get('/projects', (req, res) => {
+    res.sendFile(path.join(__dirname, 'src', 'views', 'projects.html'));
 });
 
 app.listen(PORT, () => {
