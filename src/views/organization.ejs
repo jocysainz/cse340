@@ -1,0 +1,38 @@
+<%- include('partials/header') %>
+
+    <main>
+        <% if (organizationDetails) { %>
+            <h2>
+                <%= organizationDetails.name %>
+            </h2>
+
+            <% if (organizationDetails.logo_filename) { %>
+                <img src="/images/<%= organizationDetails.logo_filename %>" alt="<%= organizationDetails.name %> logo">
+                <% } %>
+
+                    <p>
+                        <%= organizationDetails.description %>
+                    </p>
+
+                    <h3>Associated Service Projects</h3>
+                    <% if (projects && projects.length> 0) { %>
+                        <ul>
+                            <% projects.forEach(project=> { %>
+                                <li>
+                                    <a href="/project/<%= project.project_id %>">
+                                        <%= project.title %>
+                                    </a>
+                                    - <%= new Date(project.date).toLocaleDateString() %>
+                                </li>
+                                <% }) %>
+                        </ul>
+                        <% } else { %>
+                            <p>No service projects found for this organization.</p>
+                            <% } %>
+                                <% } else { %>
+                                    <h2>Organization Not Found</h2>
+                                    <p>The requested organization could not be found.</p>
+                                    <% } %>
+    </main>
+
+    <%- include('partials/footer') %>
