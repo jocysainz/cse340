@@ -1,19 +1,40 @@
 <%- include('partials/header') %>
+
     <main>
         <h1>
             <%= title %>
         </h1>
 
-        <ul>
-            <% projects.forEach(project=> { %>
-                <li>
-                    <strong>
-                        <%= new Date(project.date).toLocaleDateString('en-US', { timeZone: 'UTC' , year: 'numeric' ,
-                            month: 'short' , day: 'numeric' }) %>:
-                    </strong>
-                    <%= project.title %> (<%= project.organization_name %>)
-                </li>
-                <% }); %>
-        </ul>
+        <div class="projects-grid">
+            <% if (projects && projects.length> 0) { %>
+                <% projects.forEach(project=> { %>
+                    <article class="project-card">
+                        <h2>
+                            <a href="/project/<%= project.project_id %>">
+                                <%= project.title %>
+                            </a>
+                        </h2>
+                        <p>
+                            <strong>Organization:</strong>
+                            <a href="/organization/<%= project.organization_id %>">
+                                <%= project.organization_name %>
+                            </a>
+                        </p>
+                        <p><strong>Date:</strong>
+                            <%= new Date(project.date).toLocaleDateString() %>
+                        </p>
+                        <p><strong>Location:</strong>
+                            <%= project.location %>
+                        </p>
+                        <p>
+                            <%= project.description %>
+                        </p>
+                    </article>
+                    <% }) %>
+                        <% } else { %>
+                            <p>No upcoming projects scheduled at this time.</p>
+                            <% } %>
+        </div>
     </main>
+
     <%- include('partials/footer') %>
