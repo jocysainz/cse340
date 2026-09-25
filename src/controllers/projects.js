@@ -5,6 +5,7 @@ import {
   createProject
 } from '../models/projects.js';
 import { getAllOrganizations } from '../models/organizations.js';
+import { getCategoriesByServiceProjectId } from '../models/categories.js';
 
 const projectValidation = [
   body('title')
@@ -36,10 +37,8 @@ const showProjectsPage = async (req, res) => {
 const showProjectDetailsPage = async (req, res) => {
   const projectId = req.params.id;
   const project = await getProjectDetails(projectId);
+  const categories = await getCategoriesByServiceProjectId(projectId);
   const title = 'Project Details';
-  
-  // Provide categories (empty array fallback prevents project.ejs from crashing)
-  const categories = project?.categories || [];
 
   res.render('project', { title, project, categories });
 };

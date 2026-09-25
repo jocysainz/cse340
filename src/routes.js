@@ -16,7 +16,12 @@ import {
   processNewProjectForm,
   projectValidation
 } from './controllers/projects.js';
-import { showCategoriesPage, showCategoryDetailsPage } from './controllers/categories.js';
+import {
+  showCategoriesPage,
+  showCategoryDetailsPage,
+  showAssignCategoriesForm,
+  processAssignCategoriesForm
+} from './controllers/categories.js';
 import { testErrorPage } from './controllers/errors.js';
 
 const router = express.Router();
@@ -36,6 +41,12 @@ router.get('/projects', showProjectsPage);
 router.get('/new-project', showNewProjectForm);
 router.post('/new-project', projectValidation, processNewProjectForm);
 router.get('/project/:id', showProjectDetailsPage);
+
+// Assign categories routes (supporting both route formats from instructions)
+router.get('/assign-categories/:projectId', showAssignCategoriesForm);
+router.post('/assign-categories/:projectId', processAssignCategoriesForm);
+router.get('/project/:projectId/assign-categories', showAssignCategoriesForm);
+router.post('/project/:projectId/assign-categories', processAssignCategoriesForm);
 
 // Categories routes
 router.get('/categories', showCategoriesPage);
