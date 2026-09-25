@@ -4,7 +4,10 @@ import {
   showOrganizationsPage,
   showOrganizationDetailsPage,
   showNewOrganizationForm,
-  processNewOrganizationForm
+  processNewOrganizationForm,
+  showEditOrganizationForm,
+  processEditOrganizationForm,
+  organizationValidation
 } from './controllers/organizations.js';
 import { showProjectsPage, showProjectDetailsPage } from './controllers/projects.js';
 import { showCategoriesPage, showCategoryDetailsPage } from './controllers/categories.js';
@@ -17,8 +20,10 @@ router.get('/', showHomePage);
 // Organizations routes
 router.get('/organizations', showOrganizationsPage);
 router.get('/new-organization', showNewOrganizationForm);
-router.post('/new-organization', processNewOrganizationForm);
+router.post('/new-organization', organizationValidation, processNewOrganizationForm);
 router.get('/organization/:id', showOrganizationDetailsPage);
+router.get('/edit-organization/:id', showEditOrganizationForm);
+router.post('/edit-organization/:id', organizationValidation, processEditOrganizationForm);
 
 // Projects routes
 router.get('/projects', showProjectsPage);
@@ -28,7 +33,7 @@ router.get('/project/:id', showProjectDetailsPage);
 router.get('/categories', showCategoriesPage);
 router.get('/category/:id', showCategoryDetailsPage);
 
-// Error-handling test route
+// Error route
 router.get('/test-error', testErrorPage);
 
 export default router;

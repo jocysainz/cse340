@@ -1,38 +1,39 @@
 <%- include('partials/header') %>
-
     <main>
-        <% if (organizationDetails) { %>
-            <h2>
-                <%= organizationDetails.name %>
-            </h2>
+        <h2>
+            <%= organizationDetails.name %>
+        </h2>
 
-            <% if (organizationDetails.logo_filename) { %>
-                <img src="/images/<%= organizationDetails.logo_filename %>" alt="<%= organizationDetails.name %> logo">
+        <img class="main-logo" src="/images/<%= organizationDetails.logo_filename %>"
+            alt="<%= organizationDetails.name %> logo">
+
+        <p>
+            <%= organizationDetails.description %>
+        </p>
+
+        <p><strong>Contact:</strong>
+            <%= organizationDetails.contact_email %>
+        </p>
+
+        <p><a href="/edit-organization/<%= organizationDetails.organization_id %>">Edit Organization</a></p>
+
+        <h2>Associated Service Projects</h2>
+        <% if (projects.length> 0) { %>
+            <ul>
+                <% projects.forEach(project=> { %>
+                    <li>
+                        <strong>
+                            <%= project.title %>
+                        </strong> - <%= project.location %><br>
+                            <em>
+                                <%= project.date %>
+                            </em><br>
+                            <%= project.description %>
+                    </li>
+                    <% }); %>
+            </ul>
+            <% } else { %>
+                <p>No service projects found for this organization.</p>
                 <% } %>
-
-                    <p>
-                        <%= organizationDetails.description %>
-                    </p>
-
-                    <h3>Associated Service Projects</h3>
-                    <% if (projects && projects.length> 0) { %>
-                        <ul>
-                            <% projects.forEach(project=> { %>
-                                <li>
-                                    <a href="/project/<%= project.project_id %>">
-                                        <%= project.title %>
-                                    </a>
-                                    - <%= new Date(project.date).toLocaleDateString() %>
-                                </li>
-                                <% }) %>
-                        </ul>
-                        <% } else { %>
-                            <p>No service projects found for this organization.</p>
-                            <% } %>
-                                <% } else { %>
-                                    <h2>Organization Not Found</h2>
-                                    <p>The requested organization could not be found.</p>
-                                    <% } %>
     </main>
-
     <%- include('partials/footer') %>
