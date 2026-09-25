@@ -1,91 +1,43 @@
-import db from './db.js';
+import pool from './db.js';
 
 const getAllProjects = async () => {
-  const query = `
-    SELECT p.project_id, p.title, p.description, p.location, p.date, o.name AS organization_name 
-    FROM public.project p 
-    JOIN public.organization o ON p.organization_id = o.organization_id 
-    ORDER BY p.date ASC;
-  `;
-  const result = await db.query(query);
-  return result.rows;
-};
-
-const getProjectsByOrganizationId = async (organizationId) => {
-  const query = `
-    SELECT
-      project_id,
-      organization_id,
-      title,
-      description,
-      location,
-      date
-    FROM project
-    WHERE organization_id = $1
-    ORDER BY date;
-  `;
-  const queryParams = [organizationId];
-  const result = await db.query(query, queryParams);
-  return result.rows;
-};
-
-const getUpcomingProjects = async (numberOfProjects) => {
-  const query = `
-    SELECT
-      p.project_id,
-      p.title,
-      p.description,
-      p.date,
-      p.location,
-      p.organization_id,
-      o.name AS organization_name
-    FROM project p
-    JOIN organization o ON p.organization_id = o.organization_id
-    WHERE p.date >= CURRENT_DATE
-    ORDER BY p.date ASC
-    LIMIT $1;
-  `;
-  const queryParams = [numberOfProjects];
-  const result = await db.query(query, queryParams);
+  const query = 'SELECT project_id, organization_id, title, description, location, date FROM public.project;';
+  const result = await pool.query(query);
   return result.rows;
 };
 
 const getProjectDetails = async (id) => {
-  const query = `
-    SELECT
-      p.project_id,
-      p.title,
-      p.description,
-      p.date,
-      p.location,
-      p.organization_id,
-      o.name AS organization_name
-    FROM project p
-    JOIN organization o ON p.organization_id = o.organization_id
-    WHERE p.project_id = $1;
-  `;
-  const queryParams = [id];
-  const result = await db.query(query, queryParams);
-  return result.rows.length > 0 ? result.rows[0] : null;
+  const query = 'SELECT project_id, organization_id, title, description, location, date FROM public.project WHERE project_id = $1;';
+  const result = await pool.query(query, [id]);
+  return result.rows[0];
 };
 
-const getCategoriesByProjectId = async (projectId) => {
-  const query = `
-    SELECT c.category_id, c.name
-    FROM public.category c
-    JOIN public.project_category pc ON c.category_id = pc.category_id
-    WHERE pc.project_id = $1
-    ORDER BY c.name ASC;
-  `;
-  const queryParams = [projectId];
-  const result = await db.query(query, queryParams);
+const getProjectsByOrganizationId = async (organizationId) => {
+  const query = 'SELECT project_id, organization_id, title, description, location, date FROM project WHERE organization_id = $1 ORDER BY date;';
+  const result = await pool.query(query, [organizationId]);
   return result.rows;
+};
+
+const createProject = async (title, description, location, date, organizationId) => {
+  const query = `
+    INSERT INTO project (title, description, location, date, organization_id)
+    VALUES ($1, $2, $3, $4, $5)
+    RETURNING project_id;
+  `;
+
+  const queryParams = [title, description, location, date, organizationId];
+  const result = await pool.query(query, queryParams);
+
+  if (result.rows.length === 0) {
+    throw new Error('Failed to create project');
+  }
+
+  return result.rows[0].project_id;
 };
 
 export {
   getAllProjects,
-  getProjectsByOrganizationId,
-  getUpcomingProjects,
   getProjectDetails,
-  getCategoriesByProjectId
+  getProjectsByOrganizationId,
+  createProject
 };
