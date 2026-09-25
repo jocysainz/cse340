@@ -1,25 +1,41 @@
 import express from 'express';
 import { fileURLToPath } from 'url';
 import path from 'path';
+import session from 'express-session';
+import flash from './src/middleware/flash.js';
 import { testConnection } from './src/models/db.js';
 import router from './src/routes.js';
 
 // Define the application environment
 const NODE_ENV = process.env.NODE_ENV?.toLowerCase() || 'production';
-// Define the port number the server will listen on
 const PORT = process.env.PORT || 3000;
+const SESSION_SECRET = process.env.SESSION_SECRET;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
 
+// Set up session management
+app.use(session({
+  secret: SESSION_SECRET || 'fallback-secret-dev',
+  resave: false,
+  saveUninitialized: true,
+  cookie: { maxAge: 60 * 60 * 1000 } // 1 hour inactivity expiration
+}));
+
+// Use flash message middleware
+app.use(flash);
+
+// Parse form body data and JSON
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+
 // Serve static files from the public directory
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Set EJS as the templating engine
 app.set('view engine', 'ejs');
-// Tell Express where to find your templates
 app.set('views', path.join(__dirname, 'src', 'views'));
 
 // Middleware to log all incoming requests

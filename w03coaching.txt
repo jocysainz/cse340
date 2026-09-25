@@ -1,0 +1,214 @@
+======================================================================
+                 WEEK 03 COACHING SESSION TRANSCRIPT
+======================================================================
+Student: Laura
+Topic Focus: Models, Views, Controllers, Error Handling
+
+----------------------------------------------------------------------
+[Coach]:
+Welcome! Just to be clear from the start, this is a coaching session, not a test. It is perfectly okay—and even encouraged—to say 'I don't know' or 'I made a mistake.' That's the fastest way we'll learn today.
+
+I am here as your supportive, non-judgmental Learning Coach and Software Mentor. Since we are working together in this chat interface, whenever we discuss specific files or lines of code, I'll simply ask you to paste the relevant snippets right into our conversation, and at the end of our session, I will make sure you have the full conversation transcript.
+
+To kick things off, could you please confirm what name you'd like me to call you today?
+
+----------------------------------------------------------------------
+[Laura]:
+Laura
+
+----------------------------------------------------------------------
+[Coach]:
+It is wonderful to meet you, Laura! 
+
+We will explore four main topics together today: Models, Views, Controllers, and Error Handling. We'll take them one step at a time at your pace.
+
+Let's begin with Topic 1: Models. Could you paste a code snippet of a model function you wrote that accepts a parameter and uses it inside an SQL query?
+
+----------------------------------------------------------------------
+[Laura]:
+const getProjectDetails = async (id) => {
+  const query = `
+    SELECT
+      p.project_id,
+      p.title,
+      p.description,
+      p.date,
+      p.location,
+      p.organization_id,
+      o.name AS organization_name
+    FROM project p
+    JOIN organization o ON p.organization_id = o.organization_id
+    WHERE p.project_id = $1;
+  `;
+  const queryParams = [id];
+  const result = await db.query(query, queryParams);
+  return result.rows.length > 0 ? result.rows[0] : null;
+};
+
+----------------------------------------------------------------------
+[Coach]:
+That is a clean, well-structured query function, Laura.
+
+Looking at your SQL query, I notice you wrote WHERE p.project_id = $1 and passed queryParams = [id] rather than concatenating the id directly into the SQL string. 
+
+What is the main reason you chose to use $1 and parameterized queries here instead of string interpolation?
+
+----------------------------------------------------------------------
+[Laura]:
+The main reason is security specifically preventing SQL injection attacks.
+If I concatenated or interpolated the variable directly into the string (like '... WHERE project_id = ' + id), a malicious user could pass SQL syntax in the URL (such as 1; DROP TABLE project;), and the database would execute it as code.
+By using the $1 placeholder and passing [id] via queryParams, the database driver treats the value strictly as literal data rather than executable SQL command instructions. As a secondary benefit, parameterized queries allow the database engine to cache and reuse execution plans for better performance.
+
+----------------------------------------------------------------------
+[Coach]:
+Spot on, Laura. You nailed both the primary defense against SQL injection and the query plan caching optimization. That covers our first topic smoothly!
+
+Now let's move to Topic 2: Views. 
+
+Could you share a non-trivial EJS snippet from one of your view templates where you dynamically insert data into an HTML link (an <a> tag)?
+
+----------------------------------------------------------------------
+[Laura]:
+This is from src/views/projects.ejs <article class="project-card">
+    <h2>
+        <a href="/project/<%= project.project_id %>"><%= project.title %></a>
+    </h2>
+    <p>
+        <strong>Organization:</strong> 
+        <a href="/organization/<%= project.organization_id %>"><%= project.organization_name %></a>
+    </p>
+    <p><strong>Date:</strong> <%= new Date(project.date).toLocaleDateString() %></p>
+    <p><strong>Location:</strong> <%= project.location %></p>
+    <p><%= project.description %></p>
+</article>
+
+----------------------------------------------------------------------
+[Coach]:
+Great snippet, Laura.
+
+Notice how you used <%= project.project_id %> inside href="/project/<%= project.project_id %>": what made you choose this kind of dynamic path parameter in the URL path over using a query string like /project?id=123?
+
+----------------------------------------------------------------------
+[Laura]:
+I chose a route parameter (/project/123) because it aligns with RESTful routing conventions where the URL path identifies a specific individual resource.
+
+Path parameters are ideal when the parameter is essential for locating the unique entity a single project cannot be rendered without its ID. In contrast, query strings (like /project?id=123 or /projects category=education&sort=date) are typically better suited for optional operations like filtering, sorting, searching, or pagination across collections.
+Using clean route parameters also results in cleaner, more user friendly, and more readable URLs.
+
+----------------------------------------------------------------------
+[Coach]:
+That is an excellent distinction between identifying a unique resource and filtering or sorting a collection.
+
+Let's head right into Topic 3: Controllers. 
+
+Connecting back to that route structure, could you paste a snippet of the controller or route handler code where you receive that route parameter and handle the request?
+
+----------------------------------------------------------------------
+[Laura]:
+// In src/controllers/projects.js
+const showProjectDetailsPage = async (req, res) => {
+  const projectId = req.params.id;
+  const project = await getProjectDetails(projectId);
+  const categories = await getCategoriesByProjectId(projectId);
+  const title = project ? project.title : 'Project Details';
+  
+  res.render('project', { title, project, categories });
+};
+
+export { showProjectDetailsPage };  // In src/routes.js
+import { showProjectDetailsPage } from './controllers/projects.js';
+
+router.get('/project/:id', showProjectDetailsPage);                                                                                   In routes.js, :id defines the route parameter. Inside the controller  Express populates that value into req.params.id.
+The controller manages the coordination: it extracts the route parameter, calls the model functions (getProjectDetails and getCategoriesByProjectId) to fetch the necessary data, sets a fallback title if the record is missing, and passes the resulting data to the project EJS view. The controller doesn't write any SQL itself  preserving separation of concerns
+
+----------------------------------------------------------------------
+[Coach]:
+You articulated separation of concerns and the role of the controller very clearly, Laura.
+
+Looking at showProjectDetailsPage, if a user enters an ID for a project that doesn't exist in your database, project will be null based on your model function. 
+
+How does your controller currently handle that case, and what would you do if you wanted to explicitly inform the user that the specific project was not found?
+
+----------------------------------------------------------------------
+[Laura]:
+Currently, my controller sets a fallback title (title = project ? project.title : 'Project Details') and passes the null project object to the view, where the EJS template uses conditional rendering
+HTML
+
+<% if (project) { %>
+  <!-- Display project details -->
+<% } else { %>
+  <h2>Project Not Found</h2>
+  <p>The requested service project could not be found.</p>
+<% } %>
+While that displays a friendly message to the user the HTTP response status code still defaults to 200 OK. If I wanted to handle it more robustly and communicate the missing resource according to HTTP standards I would check for !project in the controller and either:
+
+Explicitly render a 404 status and page
+JavaScript
+
+if (!project) {
+  return res.status(404).render('errors/404', {
+    title: 'Project Not Found',
+    message: 'The requested project could not be found.'
+  });
+}
+Or pass an Error to Express's centralized error handler:
+JavaScript
+
+if (!project) {
+  const err = new Error('Project Not Found');
+  err.status = 404;
+  return next(err);
+}
+This approach notifies search engine crawlers and client applications with an actual 404 status code rather than reporting success
+
+----------------------------------------------------------------------
+[Coach]:
+That brings us directly into our final topic, Topic 4: Error Handling! Your explanation of why returning an actual 404 HTTP status matters over an accidental 200 OK is spot-on.
+
+Could you paste the code snippet from your application showing how you configure or structure your error handling (such as a 404 catch-all route or a centralized error-handling middleware for 500 errors)?
+
+----------------------------------------------------------------------
+[Laura]:
+// 404 Catch-All Middleware (placed after all routes)
+app.use((req, res, next) => {
+  const err = new Error('Page Not Found');
+  err.status = 404;
+  next(err);
+});
+
+// Centralized Error-Handling Middleware
+app.use((err, req, res, next) => {
+  console.error('Error occurred:', err.message);
+  if (process.env.NODE_ENV === 'development') {
+    console.error('Stack trace:', err.stack);
+  }
+
+  const status = err.status || 500;
+  res.status(status);
+
+  if (status === 404) {
+    res.render('errors/404', {
+      title: '404 - Page Not Found',
+      message: 'The page you are looking for does not exist.'
+    });
+  } else {
+    res.render('errors/500', {
+      title: '500 - Server Error',
+      message: 'An unexpected error occurred on the server.',
+      error: process.env.NODE_ENV === 'development' ? err : null
+    });
+  }
+});
+
+----------------------------------------------------------------------
+[Coach]:
+This is an exemplary implementation of an Express error-handling pipeline, Laura.
+
+Notice how your centralized middleware checks process.env.NODE_ENV === 'development' before deciding whether to print the stack trace to the console or pass the err object to the view. 
+
+Why is it so important to hide full error details and stack traces from end users in production?
+
+----------------------------------------------------------------------
+[Laura]:
+The main reason is security. Stack traces reveal server paths, database table names, and software versions that attackers could use to exploit the system. Hiding those technical details protects our infrastructure while providing users with a clean, professional error page instead of a confusing code dump
+======================================================================
