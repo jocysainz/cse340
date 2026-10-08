@@ -1,3 +1,4 @@
+import { showUserRegistrationForm, processUserRegistrationForm } from './controllers/users.js';
 import express from 'express';
 import { showHomePage } from './controllers/index.js';
 import {
@@ -68,4 +69,7 @@ router.get('/category/:id', showCategoryDetailsPage);
 // Error route
 router.get('/test-error', testErrorPage);
 
+// User registration routes
+router.get('/register', showUserRegistrationForm);
+router.post('/register', processUserRegistrationForm);
 export default router;
