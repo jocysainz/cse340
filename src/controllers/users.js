@@ -37,7 +37,7 @@ const processLoginForm = async (req, res) => {
             req.session.user = user;
             console.log('Logged in user:', user);
             req.flash('success', 'Login successful!');
-            return res.redirect('/');
+            return res.redirect('/dashboard');
         } else {
             req.flash('error', 'Invalid email or password.');
             return res.redirect('/login');
@@ -58,10 +58,29 @@ const processLogout = (req, res) => {
     });
 };
 
+const requireLogin = (req, res, next) => {
+    if (!req.session || !req.session.user) {
+        req.flash('error', 'You must be logged in to access that page.');
+        return res.redirect('/login');
+    }
+    next();
+};
+
+const showDashboard = (req, res) => {
+    const user = req.session.user;
+    res.render('dashboard', { 
+        title: 'Dashboard',
+        name: user.name,
+        email: user.email
+    });
+};
+
 export { 
     showUserRegistrationForm, 
     processUserRegistrationForm, 
     showLoginForm, 
     processLoginForm, 
-    processLogout 
+    processLogout,
+    requireLogin,
+    showDashboard
 };
