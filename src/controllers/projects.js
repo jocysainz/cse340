@@ -3,7 +3,10 @@ import {
   getAllProjects,
   getProjectDetails,
   createProject,
-  updateProject
+  updateProject,
+  addVolunteerToProject,
+  removeVolunteerFromProject,
+  isUserVolunteering
 } from '../models/projects.js';
 import { getAllOrganizations } from '../models/organizations.js';
 import { getCategoriesByServiceProjectId } from '../models/categories.js';
@@ -41,7 +44,12 @@ const showProjectDetailsPage = async (req, res) => {
   const categories = await getCategoriesByServiceProjectId(projectId);
   const title = 'Project Details';
 
-  res.render('project', { title, project, categories });
+  let isVolunteering = false;
+  if (req.session && req.session.user) {
+    isVolunteering = await isUserVolunteering(req.session.user.user_id, projectId);
+  }
+
+  res.render('project', { title, project, categories, isVolunteering });
 };
 
 const showNewProjectForm = async (req, res) => {
@@ -105,6 +113,38 @@ const processEditProjectForm = async (req, res) => {
   }
 };
 
+const processAddVolunteer = async (req, res) => {
+  const projectId = req.params.id;
+  const userId = req.session.user.user_id;
+
+  try {
+    await addVolunteerToProject(userId, projectId);
+    req.flash('success', 'You have signed up to volunteer for this project!');
+  } catch (error) {
+    console.error('Error adding volunteer:', error);
+    req.flash('error', 'Could not sign up for this project.');
+  }
+  res.redirect(`/project/${projectId}`);
+};
+
+const processRemoveVolunteer = async (req, res) => {
+  const projectId = req.params.id;
+  const userId = req.session.user.user_id;
+
+  try {
+    await removeVolunteerFromProject(userId, projectId);
+    req.flash('success', 'You are no longer volunteering for this project.');
+  } catch (error) {
+    console.error('Error removing volunteer:', error);
+    req.flash('error', 'Could not remove volunteer signup.');
+  }
+
+  if (req.headers.referer && req.headers.referer.includes('/dashboard')) {
+    return res.redirect('/dashboard');
+  }
+  res.redirect(`/project/${projectId}`);
+};
+
 export {
   showProjectsPage,
   showProjectDetailsPage,
@@ -112,5 +152,7 @@ export {
   processNewProjectForm,
   showEditProjectForm,
   processEditProjectForm,
+  processAddVolunteer,
+  processRemoveVolunteer,
   projectValidation
 };

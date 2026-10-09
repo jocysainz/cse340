@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS organization (
     contact_email VARCHAR(255) NOT NULL,
     logo_filename VARCHAR(255) NOT NULL
 );
+
 INSERT INTO organization (name, description, contact_email, logo_filename)
 VALUES (
         'BrightFuture Builders',
@@ -24,6 +25,7 @@ VALUES (
         'hello@unityserve.org',
         'unityserve-logo.png'
     );
+
 CREATE TABLE IF NOT EXISTS public.project (
     project_id SERIAL PRIMARY KEY,
     organization_id INT NOT NULL REFERENCES public.organization(organization_id) ON DELETE CASCADE,
@@ -32,6 +34,7 @@ CREATE TABLE IF NOT EXISTS public.project (
     location VARCHAR(200),
     date DATE NOT NULL
 );
+
 INSERT INTO public.project (
         organization_id,
         title,
@@ -144,34 +147,34 @@ VALUES (
         'Central Prep Kitchen',
         '2026-11-04'
     );
--- Create category table
+
 CREATE TABLE IF NOT EXISTS public.category (
     category_id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL UNIQUE
 );
--- Insert default categories
+
 INSERT INTO public.category (name)
 VALUES ('Construction & Maintenance'),
     ('Agriculture & Environment'),
     ('Community Support & Relief'),
     ('Education & Youth') ON CONFLICT (name) DO NOTHING;
--- Create junction table for projects and categories
+
 CREATE TABLE IF NOT EXISTS public.project_category (
     project_id INT NOT NULL REFERENCES public.project(project_id) ON DELETE CASCADE,
     category_id INT NOT NULL REFERENCES public.category(category_id) ON DELETE CASCADE,
     PRIMARY KEY (project_id, category_id)
 );
--- Create roles table
+
 CREATE TABLE IF NOT EXISTS public.roles (
     role_id SERIAL PRIMARY KEY,
     role_name VARCHAR(50) UNIQUE NOT NULL,
     role_description TEXT
 );
--- Insert default roles
+
 INSERT INTO public.roles (role_name, role_description)
 VALUES ('user', 'Standard user with basic access'),
     ('admin', 'Administrator with full system access') ON CONFLICT (role_name) DO NOTHING;
--- Create users table
+
 CREATE TABLE IF NOT EXISTS public.users (
     user_id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
@@ -179,4 +182,12 @@ CREATE TABLE IF NOT EXISTS public.users (
     password_hash VARCHAR(255) NOT NULL,
     role_id INTEGER REFERENCES public.roles(role_id),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Many-to-many junction table for volunteering
+CREATE TABLE IF NOT EXISTS public.project_volunteer (
+    user_id INT NOT NULL REFERENCES public.users(user_id) ON DELETE CASCADE,
+    project_id INT NOT NULL REFERENCES public.project(project_id) ON DELETE CASCADE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id, project_id)
 );

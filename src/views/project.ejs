@@ -14,24 +14,40 @@
             <%= project.date %>
         </p>
 
-        <% if (user && user.role_name==='admin' ) { %>
-            <p>
-                <a href="/edit-project/<%= project.project_id %>">Edit Service Project</a> |
-                <a href="/assign-categories/<%= project.project_id %>">Edit Categories</a>
-            </p>
+        <!-- Volunteer Section: Visible only to logged-in users -->
+        <% if (user) { %>
+            <div class="volunteer-actions" style="margin: 1.5rem 0;">
+                <% if (isVolunteering) { %>
+                    <p>
+                        <strong>You are volunteering for this project.</strong>
+                        [ <a href="/project/<%= project.project_id %>/unvolunteer">Remove Volunteering</a> ]
+                    </p>
+                    <% } else { %>
+                        <p>
+                            <a href="/project/<%= project.project_id %>/volunteer">Volunteer for this project</a>
+                        </p>
+                        <% } %>
+            </div>
             <% } %>
 
-                <h3>Categories</h3>
-                <% if (categories && categories.length> 0) { %>
-                    <ul class="category-tags">
-                        <% categories.forEach(cat=> { %>
-                            <li>
-                                <%= cat.name %>
-                            </li>
-                            <% }); %>
-                    </ul>
-                    <% } else { %>
-                        <p>No categories assigned to this project.</p>
-                        <% } %>
+                <% if (user && user.role_name==='admin' ) { %>
+                    <p>
+                        <a href="/edit-project/<%= project.project_id %>">Edit Service Project</a> |
+                        <a href="/assign-categories/<%= project.project_id %>">Edit Categories</a>
+                    </p>
+                    <% } %>
+
+                        <h3>Categories</h3>
+                        <% if (categories && categories.length> 0) { %>
+                            <ul class="category-tags">
+                                <% categories.forEach(cat=> { %>
+                                    <li>
+                                        <%= cat.name %>
+                                    </li>
+                                    <% }); %>
+                            </ul>
+                            <% } else { %>
+                                <p>No categories assigned to this project.</p>
+                                <% } %>
     </main>
     <%- include('partials/footer') %>
