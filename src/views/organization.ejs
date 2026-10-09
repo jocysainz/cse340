@@ -15,25 +15,27 @@
             <%= organizationDetails.contact_email %>
         </p>
 
-        <p><a href="/edit-organization/<%= organizationDetails.organization_id %>">Edit Organization</a></p>
+        <% if (user && user.role_name==='admin' ) { %>
+            <p><a href="/edit-organization/<%= organizationDetails.organization_id %>">Edit Organization</a></p>
+            <% } %>
 
-        <h2>Associated Service Projects</h2>
-        <% if (projects.length> 0) { %>
-            <ul>
-                <% projects.forEach(project=> { %>
-                    <li>
-                        <strong>
-                            <%= project.title %>
-                        </strong> - <%= project.location %><br>
-                            <em>
-                                <%= project.date %>
-                            </em><br>
-                            <%= project.description %>
-                    </li>
-                    <% }); %>
-            </ul>
-            <% } else { %>
-                <p>No service projects found for this organization.</p>
-                <% } %>
+                <h2>Associated Service Projects</h2>
+                <% if (projects.length> 0) { %>
+                    <ul>
+                        <% projects.forEach(project=> { %>
+                            <li>
+                                <strong>
+                                    <%= project.title %>
+                                </strong> - <%= project.location %><br>
+                                    <em>
+                                        <%= project.date %>
+                                    </em><br>
+                                    <%= project.description %>
+                            </li>
+                            <% }); %>
+                    </ul>
+                    <% } else { %>
+                        <p>No service projects found for this organization.</p>
+                        <% } %>
     </main>
     <%- include('partials/footer') %>

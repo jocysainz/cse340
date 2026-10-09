@@ -5,19 +5,21 @@
             <%= title %>
         </h1>
 
-        <p><a href="/new-category">Add a New Category</a></p>
+        <% if (user && user.role_name==='admin' ) { %>
+            <p><a href="/new-category">Add a New Category</a></p>
+            <% } %>
 
-        <ul class="categories-list">
-            <% categories.forEach(category=> { %>
-                <li>
-                    <h2>
-                        <a href="/category/<%= category.category_id %>">
-                            <%= category.name %>
-                        </a>
-                    </h2>
-                </li>
-                <% }) %>
-        </ul>
+                <ul class="categories-list">
+                    <% categories.forEach(category=> { %>
+                        <li>
+                            <h2>
+                                <a href="/category/<%= category.category_id %>">
+                                    <%= category.name %>
+                                </a>
+                            </h2>
+                        </li>
+                        <% }) %>
+                </ul>
     </main>
 
     <%- include('partials/footer') %>
