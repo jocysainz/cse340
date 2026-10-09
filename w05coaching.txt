@@ -1,0 +1,185 @@
+================================================================================
+W05 COACHING SESSION: AUTHENTICATION AND AUTHORIZATION - TRANSCRIPT
+Student Name: Laura
+================================================================================
+
+[COACH]
+Welcome! Just to be clear from the start, this is a coaching session, not a test. It is perfectly okay—and even encouraged—to say 'I don't know' or 'I made a mistake.' That's the fastest way we'll learn today.
+
+I am here as your supportive, non-judgmental Learning Coach and Software Mentor to help you walk through the concepts, talk about your design decisions, and explore the code you wrote for authentication and authorization.
+
+To get us started, could you please confirm your name?
+
+--------------------------------------------------------------------------------
+[STUDENT]
+Laura
+
+--------------------------------------------------------------------------------
+[COACH]
+Great to meet you, Laura! 
+
+Remember, this is a collaborative and comfortable space where we're just talking through the concepts and code together—mistakes and questions are completely welcome here.
+
+Let's dive into our first topic: Registration and Password Hashing. 
+
+To begin, could you share a code snippet from your project that shows how you handle user registration and password hashing, and briefly explain what happens when a new user signs up?
+
+--------------------------------------------------------------------------------
+[STUDENT]
+const processUserRegistrationForm = async (req, res) => {
+    const { name, email, password } = req.body;
+
+    try {
+        // Generate a salt with 10 rounds and hash the plain-text password
+        const salt = await bcrypt.genSalt(10);
+        const passwordHash = await bcrypt.hash(password, salt);
+
+        // Save the new user record into the database with the hashed password
+        await createUser(name, email, passwordHash);
+
+        req.flash('success', 'Registration successful! Please log in.');
+        res.redirect('/login');
+    } catch (error) {
+        console.error('Error registering user:', error);
+        req.flash('error', 'An error occurred during registration. Please try again.');
+        res.redirect('/register');
+    }
+};
+
+--------------------------------------------------------------------------------
+[COACH]
+That is a very clean and readable implementation, Laura! Using bcrypt with salt rounds is exactly the right path for securing credentials.
+
+Looking at your code:
+const salt = await bcrypt.genSalt(10);
+const passwordHash = await bcrypt.hash(password, salt);
+
+In your own words, what role does the salt play here, and why is it important not to just hash the plain-text password on its own?
+
+--------------------------------------------------------------------------------
+[STUDENT]
+A salt is a random data added to a password before hashing so the output is unique. Without a salt, identical passwords produce the exact same hash, making it easy for hackers to crack them using precomputed lookup lists. adding a unique salt ensures that even if two users have the same passwords, their stored hashes are completely different, forcing attackers to guess each passwords one by one.
+
+--------------------------------------------------------------------------------
+[COACH]
+Spot on! That is a textbook explanation—defeating precomputed rainbow tables and ensuring identical passwords don't yield matching hashes are the primary reasons we salt.
+
+Now let's move forward to Topic 2: Login and Sessions.
+
+Could you share a code snippet showing your login logic and how you establish/manage the user's session once their credentials are verified?
+
+--------------------------------------------------------------------------------
+[STUDENT]
+// src/controllers/users.js
+const processLoginForm = async (req, res) => {
+    const { email, password } = req.body;
+    const user = await authenticateUser(email, password);
+
+    if (user) {
+        req.session.user = user; // Establish the session
+        req.flash('success', 'Login successful!');
+        return res.redirect('/dashboard');
+    }
+
+    req.flash('error', 'Invalid email or password.');
+    return res.redirect('/login');
+};
+
+When a user submits their login credentials, this functions take their email and password to check them against the database. If detailed match, it saves the user to req.session.user, which keeps them logged in across different pages, shows a success message, and redirects them to the dashboard. If the information is incorrect, it displays an error message and sends them back to the login page without starting a session.
+
+--------------------------------------------------------------------------------
+[COACH]
+That is a clear, concise controller function, Laura, and your explanation breaks down the flow perfectly.
+
+Looking at this line:
+req.session.user = user;
+
+HTTP is stateless by default, so how does the server know on future requests that it's this same user making the request—what mechanism ties the browser back to req.session.user?
+
+--------------------------------------------------------------------------------
+[STUDENT]
+When you assign req.session.user = user, the server creates a unique session ID for that user, saves their data in server memory,, the browser automatically sends this cookie back to the server in the request headers. The server then reads the session ID from the cookie, looks up the matching data stored on the server, and automatically reconstructs req.session.user so it knows exactly who is making the request.
+
+--------------------------------------------------------------------------------
+[COACH]
+Excellent breakdown, Laura! You captured the full cycle: the session store on the server, the unique session ID stored in a cookie, and the browser sending that cookie back with every request so the server can reconstruct the session.
+
+Now let's head into Topic 3: Protected Access Middleware.
+
+Could you share a code snippet showing how you implement middleware to protect your routes (for example, checking if someone is logged in or verifying their role), and walk me through how it works?
+
+--------------------------------------------------------------------------------
+[STUDENT]
+// src/controllers/users.js
+const requireRole = (role) => {
+    return (req, res, next) => {
+        if (!req.session || !req.session.user) {
+            req.flash('error', 'You must be logged in to access this page.');
+            return res.redirect('/login');
+        }
+
+        if (req.session.user.role_name !== role) {
+            req.flash('error', 'You do not have permission to access this page.');
+            return res.redirect('/dashboard');
+        }
+
+        next();
+    };
+};
+
+This middleware intercepts incoming requests to restricted routes before the actual page handler can run. First it checks req.session.user to see if the person is logged in at all if not, it flashes an error and redirects them to the login page. Next, it checks if the logged-in user's role matches the required role (like 'admin'), sending them back to the dashboard with an access denied message if they lack permission. If both checks pass it calls next(), which permits Express to move forward and safely load the requested page.
+
+--------------------------------------------------------------------------------
+[COACH]
+You explained that beautifully, Laura! Higher-order functions returning middleware like requireRole(role) are such an elegant, reusable way to guard routes in Express.
+
+What is the importance of having return statements before res.redirect(...) in those error conditions, and what might happen if you omitted them and let execution continue?
+
+--------------------------------------------------------------------------------
+[STUDENT]
+The return statement immediately stops the function from running any further once a redirect is triggered. If you omit return, JavaScript will send the redirect response to the browser, but it will still keep running the rest of the code in the function eventually hitting next() or another response handler. Because an HTTP request can only receive one response, the server will crash with an error like Error [ERR_HTTP_HEADERS_SENT]: Cannot set headers after they are sent to the client, and the unauthorized user might still accidentally trigger operations they shouldn't have access to.
+
+--------------------------------------------------------------------------------
+[COACH]
+Spot on, Laura! That ERR_HTTP_HEADERS_SENT error trips up so many developers. Knowing that a response ends the HTTP exchange—and that code execution will proceed unless explicitly returned—is an essential insight for backend architecture.
+
+We have arrived at our final required area, Topic 4: Protected Access Links and Navigation.
+
+Could you share a code snippet (such as an EJS or HTML template) that demonstrates how you handle role-based conditional rendering in your user interface, and explain how it controls what users see?
+
+--------------------------------------------------------------------------------
+[STUDENT]
+<!-- src/views/dashboard.ejs -->
+<%- include('partials/header') %>
+<main>
+    <h1><%= title %></h1>
+
+    <h2>Dashboard</h2>
+    <p>Name: <%= name %></p>
+    <p>Username: <%= email %></p>
+
+    <!-- Only display administrative actions if the user role is admin -->
+    <% if (user && user.role_name === 'admin') { %>
+        <p><a href="/users">Manage Users</a></p>
+    <% } %>
+</main>
+<%- include('partials/footer') %>
+
+When a page is requested, the EJS template engine evaluates JavaScript expressions inside <% ... %> tags before sending the final HTML markup to the client. The template checks the global user object passed via res.locals to inspect user.role_name. If the logged-in user possesses the 'admin' role, the engine includes the "Manage Users" link inside the rendered HTML if the user is a standard member or not logged in, the entire block is omitted from the document structure entirely, preventing unauthorized navigation options from appearing in the UI.
+
+--------------------------------------------------------------------------------
+[COACH]
+That is a textbook demonstration of server-side conditional rendering, Laura! Keeping unauthorized elements out of the client markup altogether is both great security practice and cleaner UX.
+
+To wrap up our discussion on this topic: while hiding the "Manage Users" link prevents regular users from seeing or clicking it in their browser, what prevents a curious regular user from simply typing /users directly into their browser's URL bar, and how does your application remain protected?
+
+--------------------------------------------------------------------------------
+[STUDENT]
+// src/routes.js
+router.get('/users', requireRole('admin'), showUsersPage);
+
+When a user manually types /users into the address bar, the request hits the Express server before any HTML or data is returned. The requireRole('admin') middleware intercepts the request and inspects req.session.user.role_name. Because a regular user’s role is 'user' and not 'admin', the middleware immediately halts execution, sets an error flash message, and redirects the browser back to /dashboard. The showUsersPage controller and the underlying database query never execute, ensuring the restricted user data remains completely inaccessible regardless of what is typed into the URL bar.
+
+================================================================================
+END OF SESSION TRANSCRIPT
+================================================================================
