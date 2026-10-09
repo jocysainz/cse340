@@ -2,13 +2,14 @@ import express from 'express';
 import { showHomePage } from './controllers/index.js';
 import { 
     showUserRegistrationForm, 
-    processUserRegistrationForm,
+    processUserRegistrationForm, 
     showLoginForm, 
     processLoginForm, 
     processLogout,
     requireLogin,
     showDashboard,
-    requireRole
+    requireRole,
+    showUsersPage
 } from './controllers/users.js';
 import {
   showOrganizationsPage,
@@ -85,7 +86,8 @@ router.get('/login', showLoginForm);
 router.post('/login', processLoginForm);
 router.get('/logout', processLogout);
 
-// Protected dashboard route
+// Protected user routes
 router.get('/dashboard', requireLogin, showDashboard);
+router.get('/users', requireRole('admin'), showUsersPage);
 
 export default router;
